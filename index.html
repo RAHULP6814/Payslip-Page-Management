@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HR Payslip Management Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .form-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .generate-btn {
+            grid-column: span 2;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #payslip-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            font-size: 0.8em;
+            margin-top: 5px;
+            height: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HR Payslip Generation Portal</h1>
+       
+        <div class="form-section">
+            <div class="form-group">
+                <label>Employee Name</label>
+                <input type="text" id="employee-name" required minlength="5" oninput="validateInput(this, validateName, 'name-error')">
+                <div id="name-error" class="error"></div>
+            </div>
+            <div class="form-group">
+                <label>Employee ID</label>
+                <input type="text" id="employee-id" required oninput="validateInput(this, validateEmployeeId, 'empid-error')">
+                <div id="empid-error" class="error"></div>
+            </div>
+            <div class="form-group">
+                <label>Payslip Date</label>
+                <input type="date" id="payslip-date" required oninput="validateInput(this, validateDate, 'date-error')">
+                <div id="date-error" class="error"></div>
+            </div>
+            <div class="form-group">
+                <label>Basic Salary</label>
+                <input type="number" id="basic-salary" min="0" max="100" step="0.01" required onkeydown="return event.key !== 'e' && event.key !== 'E'"
+                oninput="this.value = this.value.replace(/[eE]/g, '')">
+            </div>
+            <div class="form-group">
+                <label>HRA</label>
+                <input type="number" id="hra" min="0" max="100" step="0.01" required onkeydown="return event.key !== 'e' && event.key !== 'E'"
+                oninput="this.value = this.value.replace(/[eE]/g, '')">
+            </div>
+            <div class="form-group">
+                <label>Education Allowance</label>
+                <input type="number" id="education-allowance" min="0" max="100" step="0.01" required onkeydown="return event.key !== 'e' && event.key !== 'E'"
+                oninput="this.value = this.value.replace(/[eE]/g, '')">
+            </div>
+            <div class="form-group">
+                <label>Other Allowances</label>
+                <input type="number" id="other-allowances" min="0" max="100" step="0.01" required onkeydown="return event.key !== 'e' && event.key !== 'E'"
+                oninput="this.value = this.value.replace(/[eE]/g, '')">
+            </div>
+            <div class="form-group">
+                <label>Bonus</label>
+                <input type="number" id="bonus" min="0" max="100" step="0.01" required onkeydown="return event.key !== 'e' && event.key !== 'E'"
+                oninput="this.value = this.value.replace(/[eE]/g, '')">
+            </div>
+            <div class="form-group">
+                <label>Professional Tax</label>
+                <input type="number" id="professional-tax" min="0" max="100" step="0.01" required onkeydown="return event.key !== 'e' && event.key !== 'E'"
+                oninput="this.value = this.value.replace(/[eE]/g, '')">
+            </div>
+            <button class="generate-btn" onclick="generatePayslip()">Generate Payslip</button>
+        </div>
+
+        <div id="payslip-preview"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('payslip-date').setAttribute('max', new Date().toISOString().split('T')[0]);
+        });
+
+        function validateName(name) {
+            const nameRegex = /^[A-Za-z\s]+$/;
+            const nameWithoutSpaces = name.replace(/\s/g, '');
+            return nameRegex.test(name) && nameWithoutSpaces.length >= 5;
+        }
+
+        function validateEmployeeId(empId) {
+            const empIdRegex = /^ATS0\d{3}$/;
+            return empIdRegex.test(empId);
+        }
+
+        function validateDate(dateInput) {
+            const selectedDate = new Date(dateInput);
+            const currentDate = new Date();
+            return selectedDate <= currentDate;
+        }
+
+        function validateInput(inputElement, validationFunction, errorElementId) {
+            const value = inputElement.value;
+            const errorElement = document.getElementById(errorElementId);
+           
+            if (value === '') {
+                errorElement.textContent = '';
+            } else if (!validationFunction(value)) {
+                switch(errorElementId) {
+                    case 'name-error':
+                        errorElement.textContent = 'Name must contain only alphabets and be at least 5 characters long (excluding spaces)';
+                        break;
+                    case 'empid-error':
+                        errorElement.textContent = 'Employee ID must start with ATS uppercase, followed by 0, and end with 3 numerics';
+                        break;
+                    case 'date-error':
+                        errorElement.textContent = 'Date cannot be in the future';
+                        break;
+                }
+            } else {
+                errorElement.textContent = '';
+            }
+        }
+
+        function generatePayslip() {
+            const name = document.getElementById('employee-name').value;
+            const empId = document.getElementById('employee-id').value;
+            const payslipDate = document.getElementById('payslip-date').value;
+            const basicSalary = parseFloat(document.getElementById('basic-salary').value);
+            const hra = parseFloat(document.getElementById('hra').value);
+            const educationAllowance = parseFloat(document.getElementById('education-allowance').value);
+            const otherAllowances = parseFloat(document.getElementById('other-allowances').value);
+            const bonus = parseFloat(document.getElementById('bonus').value);
+            const professionalTax = parseFloat(document.getElementById('professional-tax').value);
+
+            // Validation checks
+            if (!validateName(name) ||
+                !validateEmployeeId(empId) ||
+                !validateDate(payslipDate)) {
+                return;
+            }
+
+            const grossEarnings = basicSalary + hra + educationAllowance + otherAllowances + bonus;
+            const providentFund = Math.min(basicSalary * 0.12, 1500);
+            const totalDeductions = providentFund + professionalTax;
+            const netSalary = grossEarnings - totalDeductions;
+
+            const payslipPreview = document.getElementById('payslip-preview');
+            payslipPreview.innerHTML = `
+                <h2>Payslip Details</h2>
+                <div class="payslip-content">
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Employee ID:</strong> ${empId}</p>
+                    <p><strong>Payslip Date:</strong> ${payslipDate}</p>
+                   
+                    <h3>Earnings</h3>
+                    <p>Basic Salary: ₹${basicSalary.toFixed(2)}</p>
+                    <p>HRA: ₹${hra.toFixed(2)}</p>
+                    <p>Education Allowance: ₹${educationAllowance.toFixed(2)}</p>
+                    <p>Other Allowances: ₹${otherAllowances.toFixed(2)}</p>
+                    <p>Bonus: ₹${bonus.toFixed(2)}</p>
+                    <p><strong>Gross Earnings: ₹${grossEarnings.toFixed(2)}</strong></p>
+                   
+                    <h3>Deductions</h3>
+                    <p>Provident Fund: ₹${providentFund.toFixed(2)}</p>
+                    <p>Professional Tax: ₹${professionalTax.toFixed(2)}</p>
+                    <p><strong>Total Deductions: ₹${totalDeductions.toFixed(2)}</strong></p>
+                   
+                    <h3>Net Salary</h3>
+                    <p><strong>Net Monthly Salary: ₹${netSalary.toFixed(2)}</strong></p>
+                </div>
+            `;
+
+            // Store payslip in localStorage
+            const payslips = JSON.parse(localStorage.getItem('payslips') || '[]');
+            payslips.push({
+                name,
+                empId,
+                payslipDate,
+                basicSalary,
+                hra,
+                educationAllowance,
+                otherAllowances,
+                bonus,
+                professionalTax,
+                grossEarnings,
+                netSalary
+            });
+            localStorage.setItem('payslips', JSON.stringify(payslips));
+        }
+    </script>
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Payslip Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .login-section {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .login-section input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .login-section button {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .view-button {
+            background-color: #3498db;
+        }
+        .clear-button {
+            background-color: #e74c3c;
+        }
+        .payslip-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .modal-buttons {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Payslip Portal</h1>
+        
+        <div class="login-section">
+            <input type="text" id="employee-id" placeholder="Enter Employee ID">
+            <button class="view-button" onclick="loadPayslips()">View Payslips</button>
+            <button class="clear-button" onclick="showConfirmation()">Clear Records</button>
+        </div>
+        
+        <div id="payslips-container"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="confirmation-modal">
+        <div class="modal-content">
+            <h3>Confirm Clear Records</h3>
+            <p>Are you sure you want to clear all payslip records? This action cannot be undone.</p>
+            <div class="modal-buttons">
+                <button class="view-button" onclick="clearRecords()">Yes, Clear Records</button>
+                <button class="clear-button" onclick="hideConfirmation()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadPayslips() {
+            const employeeId = document.getElementById('employee-id').value;
+            const payslipsContainer = document.getElementById('payslips-container');
+            
+            // Retrieve payslips from localStorage
+            const allPayslips = JSON.parse(localStorage.getItem('payslips') || '[]');
+            
+            // Filter payslips for the specific employee
+            const employeePayslips = allPayslips.filter(payslip => payslip.empId === employeeId);
+
+            if (employeePayslips.length > 0) {
+                payslipsContainer.innerHTML = employeePayslips.map((payslip, index) => `
+                    <div class="payslip-card">
+                        <h3>Payslip ${index + 1}</h3>
+                        <p><strong>Name:</strong> ${payslip.name}</p>
+                        <p><strong>Employee ID:</strong> ${payslip.empId}</p>
+                        <p><strong>Payslip Date:</strong> ${payslip.payslipDate}</p>
+                        <p>Basic Salary: ₹${payslip.basicSalary.toFixed(2)}</p>
+                        <p>Bonus: ₹${payslip.bonus.toFixed(2)}</p>
+                        <p>Gross Earnings: ₹${payslip.grossEarnings.toFixed(2)}</p>
+                        <p>Professional Tax: ₹${payslip.professionalTax.toFixed(2)}</p>
+                        <p>Net Salary: ₹${payslip.netSalary.toFixed(2)}</p>
+                    </div>
+                `).join('');
+            } else {
+                payslipsContainer.innerHTML = '<p>No payslips found for this Employee ID.</p>';
+            }
+        }
+
+        function showConfirmation() {
+            document.getElementById('confirmationModal').style.display = 'flex';
+        }
+
+        function hideConfirmation() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        function clearRecords() {
+            // Clear all records from localStorage
+            localStorage.removeItem('payslips');
+            // Clear the display
+            document.getElementById('payslips-container').innerHTML = '<p>All records have been cleared.</p>';
+            // Hide the confirmation modal
+            hideConfirmation();
+        }
+    </script>
+</body>
+</html>
